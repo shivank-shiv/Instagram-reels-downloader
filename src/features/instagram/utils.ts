@@ -173,6 +173,60 @@ export const formatGraphqlJson = (data: MediaData) => {
   return videoJson;
 };
 
+// Function to format enhanced GraphQL data
+export const formatEnhancedGraphqlJson = (data: MediaData, postUrl: string) => {
+  const caption = data.edge_media_to_caption.edges[0]?.node.text || "";
+  const shortcode = data.shortcode;
+  
+  const medias = [];
+  
+  // Add video media
+  if (data.video_url) {
+    medias.push({
+      id: data.id,
+      url: data.video_url,
+      thumbnail: data.display_url,
+      quality: `${data.dimensions.width}x${data.dimensions.height}p`,
+      resolution: `${data.dimensions.width}x${data.dimensions.height}`,
+      duration: data.video_duration || 0,
+      is_audio: data.has_audio,
+      type: "video" as const,
+      extension: "mp4"
+    });
+  }
+
+  return {
+    url: postUrl,
+    source: "instagram",
+    title: caption,
+    author: data.owner.full_name,
+    shortcode,
+    view_count: data.video_view_count || null,
+    like_count: data.edge_media_preview_like.count,
+    thumbnail: data.display_url,
+    duration: data.video_duration || 0,
+    owner: {
+      username: data.owner.username,
+      profile_pic_url: data.owner.profile_pic_url,
+      is_unpublished: data.owner.is_unpublished,
+      full_name: data.owner.full_name,
+      id: data.owner.id,
+      pk: data.owner.id,
+      friendship_status: null,
+      is_verified: data.owner.is_verified,
+      is_private: data.owner.is_private,
+      profile_pic_url_hd: data.owner.profile_pic_url,
+      __typename: "XDTUserDict",
+      is_embeds_disabled: data.owner.is_embeds_disabled
+    },
+    location: null,
+    medias,
+    type: medias.length > 1 ? "multiple" : "single",
+    error: false,
+    time_end: Date.now()
+  };
+};
+
 // Function to format video data from Instagram page meta tags
 export const formatPageJson = (postHtml: CheerioAPI) => {
   const videoElement = postHtml("meta[property='og:video']");
@@ -199,6 +253,68 @@ export const formatPageJson = (postHtml: CheerioAPI) => {
   };
 
   return videoJson;
+};
+
+// Function to format enhanced page data
+export const formatEnhancedPageJson = (postHtml: CheerioAPI, postUrl: string) => {
+  const videoElement = postHtml("meta[property='og:video']");
+  if (videoElement.length === 0) return null;
+
+  const videoUrl = videoElement.attr("content");
+  if (!videoUrl) return null;
+
+  const width = postHtml("meta[property='og:video:width']").attr("content") ?? "640";
+  const height = postHtml("meta[property='og:video:height']").attr("content") ?? "640";
+  const title = postHtml("meta[property='og:title']").attr("content") ?? "";
+  const description = postHtml("meta[property='og:description']").attr("content") ?? "";
+  const thumbnail = postHtml("meta[property='og:image']").attr("content") ?? "";
+  
+  // Extract shortcode from URL
+  const shortcodeMatch = postUrl.match(/\/(p|reel|reels)\/([a-zA-Z0-9_-]+)/);
+  const shortcode = shortcodeMatch?.[2] ?? "";
+
+  const medias = [{
+    id: `${shortcode}_video`,
+    url: videoUrl,
+    thumbnail,
+    quality: `${width}x${height}p`,
+    resolution: `${width}x${height}`,
+    duration: 0,
+    is_audio: true,
+    type: "video" as const,
+    extension: "mp4"
+  }];
+
+  return {
+    url: postUrl,
+    source: "instagram",
+    title: description || title,
+    author: "",
+    shortcode,
+    view_count: null,
+    like_count: 0,
+    thumbnail,
+    duration: 0,
+    owner: {
+      username: "",
+      profile_pic_url: "",
+      is_unpublished: false,
+      full_name: "",
+      id: "",
+      pk: "",
+      friendship_status: null,
+      is_verified: false,
+      is_private: false,
+      profile_pic_url_hd: "",
+      __typename: "XDTUserDict",
+      is_embeds_disabled: false
+    },
+    location: null,
+    medias,
+    type: "single",
+    error: false,
+    time_end: Date.now()
+  };
 };
 
 // Function to validate Instagram URLs

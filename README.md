@@ -41,19 +41,41 @@ npm run build
 npm run start
 ```
 
-### Endpoint: `/api/video?postUrl={POST_URL}`
+### 4. Docker deployment
+
+Build and run with Docker:
+
+```bash
+docker build -t instagram-downloader .
+docker run -p 3000:3000 instagram-downloader
+```
+
+With environment variables:
+
+```bash
+docker run -p 3000:3000 -e USE_UPSTASH="true" -e UPSTASH_REDIS_REST_URL="your-url" -e UPSTASH_REDIS_REST_TOKEN="your-token" instagram-downloader
+```
+
+### Endpoint: `/api/video?postUrl={POST_URL}&enhanced={BOOLEAN}`
 
 Parameters:
 
 - `postUrl` : Instagram post or reel link **(required)**.
+- `enhanced` : Return enhanced response format **(optional, default: false)**.
 
-#### GET Request example
+#### GET Request examples
 
+**Standard Response:**
 ```bash
 curl -i "http://localhost:3000/api/video?postUrl=https://www.instagram.com/reel/DCUBzY0yiKK/"
 ```
 
-#### API Response
+**Enhanced Response:**
+```bash
+curl -i "http://localhost:3000/api/video?postUrl=https://www.instagram.com/reel/DCUBzY0yiKK/&enhanced=true"
+```
+
+#### Standard API Response
 
 ```json
 {
@@ -64,6 +86,49 @@ curl -i "http://localhost:3000/api/video?postUrl=https://www.instagram.com/reel/
     "height": "640",
     "videoUrl": "https://scontent.cdninstagram.com/o1/v/t16/f1/m84/E84E5DFC48EA8...etc"
   }
+}
+```
+
+#### Enhanced API Response
+
+```json
+{
+  "success": true,
+  "message": "success",
+  "data": {
+    "url": "https://www.instagram.com/reel/DCUBzY0yiKK/",
+    "source": "instagram",
+    "title": "Video caption text...",
+    "author": "Author Name",
+    "shortcode": "DCUBzY0yiKK",
+    "view_count": null,
+    "like_count": 41670,
+    "thumbnail": "https://scontent.cdninstagram.com/...",
+    "duration": 53,
+    "owner": {
+      "username": "username",
+      "profile_pic_url": "https://instagram.fhan17-1.fna.fbcdn.net/...",
+      "full_name": "Full Name",
+      "is_verified": true,
+      "is_private": false
+    },
+    "medias": [
+      {
+        "id": "3666432237498452700_4279328167",
+        "url": "https://instagram.fhan17-1.fna.fbcdn.net/...",
+        "thumbnail": "https://scontent.cdninstagram.com/...",
+        "quality": "1080x1920p",
+        "resolution": "1080x1920",
+        "duration": 53,
+        "is_audio": true,
+        "type": "video",
+        "extension": "mp4"
+      }
+    ],
+    "type": "single",
+    "error": false
+  },
+  "timestamp": "2025-01-21T16:04:32.227Z"
 }
 ```
 
