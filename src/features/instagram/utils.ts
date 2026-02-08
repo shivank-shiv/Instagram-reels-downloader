@@ -7,8 +7,10 @@ import { VideoInfo } from "@/types";
 import { MediaData } from "./types";
 
 // Function to generate a video filename
-export const getIGVideoFileName = () =>
-  getTimedFilename("ig-downloader", "mp4");
+export const getIGVideoFileName = (username?: string) => {
+  const baseName = username ? `${username}-ig-downloader` : "ig-downloader";
+  return getTimedFilename(baseName, "mp4");
+};
 
 // Function to process Instagram share URL and resolve it to the reel ID
 
@@ -158,7 +160,7 @@ export const encodeGraphqlRequestData = (shortcode: string) => {
 
 // Function to format GraphQL data into a usable video file JSON
 export const formatGraphqlJson = (data: MediaData) => {
-  const filename = getIGVideoFileName();
+  const filename = getIGVideoFileName(data.owner.username);
   const width = data.dimensions.width.toString();
   const height = data.dimensions.height.toString();
   const videoUrl = data.video_url;
@@ -177,6 +179,7 @@ export const formatGraphqlJson = (data: MediaData) => {
 export const formatEnhancedGraphqlJson = (data: MediaData, postUrl: string) => {
   const caption = data.edge_media_to_caption.edges[0]?.node.text || "";
   const shortcode = data.shortcode;
+  const username = data.owner.username;
   
   const medias = [];
   
@@ -191,7 +194,8 @@ export const formatEnhancedGraphqlJson = (data: MediaData, postUrl: string) => {
       duration: data.video_duration || 0,
       is_audio: data.has_audio,
       type: "video" as const,
-      extension: "mp4"
+      extension: "mp4",
+      filename: getIGVideoFileName(username)
     });
   }
 
@@ -243,7 +247,16 @@ export const formatPageJson = (postHtml: CheerioAPI) => {
   const height =
     postHtml("meta[property='og:video:height']").attr("content") ?? "";
 
-  const filename = getIGVideoFileName();
+  // Extract username from title or description meta tags
+  const title = postHtml("meta[property='og:title']").attr("content") ?? "";
+  const description = postHtml("meta[property='og:description']").attr("content") ?? "";
+  
+  // Try to extract username from title or description
+  // Instagram titles usually format like "username on Instagram: ..."
+  const usernameMatch = title.match(/^(@?[a-zA-Z0-9_.]+)/) || description.match(/(@?[a-zA-Z0-9_.]+)/);
+  const username = usernameMatch ? usernameMatch[1].replace('@', '') : undefined;
+
+  const filename = getIGVideoFileName(username);
 
   const videoJson: VideoInfo = {
     filename,
@@ -273,6 +286,11 @@ export const formatEnhancedPageJson = (postHtml: CheerioAPI, postUrl: string) =>
   const shortcodeMatch = postUrl.match(/\/(p|reel|reels)\/([a-zA-Z0-9_-]+)/);
   const shortcode = shortcodeMatch?.[2] ?? "";
 
+  // Extract username from title or description meta tags
+  // Instagram titles usually format like "username on Instagram: ..."
+  const usernameMatch = title.match(/^(@?[a-zA-Z0-9_.]+)/) || description.match(/(@?[a-zA-Z0-9_.]+)/);
+  const username = usernameMatch ? usernameMatch[1].replace('@', '') : "";
+
   const medias = [{
     id: `${shortcode}_video`,
     url: videoUrl,
@@ -282,24 +300,25 @@ export const formatEnhancedPageJson = (postHtml: CheerioAPI, postUrl: string) =>
     duration: 0,
     is_audio: true,
     type: "video" as const,
-    extension: "mp4"
+    extension: "mp4",
+    filename: getIGVideoFileName(username)
   }];
 
   return {
     url: postUrl,
     source: "instagram",
     title: description || title,
-    author: "",
+    author: username,
     shortcode,
     view_count: null,
     like_count: 0,
     thumbnail,
     duration: 0,
     owner: {
-      username: "",
+      username,
       profile_pic_url: "",
       is_unpublished: false,
-      full_name: "",
+      full_name: username,
       id: "",
       pk: "",
       friendship_status: null,
