@@ -734,9 +734,9 @@ export const getIGVideoFileName = (username?: string, postId?: string, userId?: 
   const finalUsername = username || "unknown";
   
   // Always use numeric post ID - if postId contains letters, generate random number instead
-  const finalPostId = (postId && /^\d+$/.test(postId)) ? postId : generateRandomNumber(19);
+  const finalPostId = generateRandomNumber(19);
   
-  const finalUserId = userId || generateRandomNumber(10); // Generate 10-digit random number
+  const finalUserId = generateRandomNumber(10); // Generate 10-digit random number
   
   // Get current date in YYYY-MM-DD format
   const today = new Date();
