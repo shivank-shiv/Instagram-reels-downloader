@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { makeErrorResponse, makeSuccessResponse } from "@/lib/http";
 import { VideoInfo } from "@/types";
 import path from "path";
@@ -22,7 +22,7 @@ function extractVideoId(url: string): string | null {
   return null;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get("url");
   if (!url) {
