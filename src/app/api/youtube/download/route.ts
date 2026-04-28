@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
     const readableStream = new ReadableStream({
       start(controller) {
-        fileStream.on("data", (chunk: Buffer) => controller.enqueue(new Uint8Array(chunk)));
+        fileStream.on("data", (chunk: string | Buffer) => controller.enqueue(new Uint8Array(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))));
         fileStream.on("end", () => {
           controller.close();
           try { fs.unlinkSync(filePath); } catch (e) { }
